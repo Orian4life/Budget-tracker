@@ -9,82 +9,139 @@ class BudgetApp(tk.Tk):
         super().__init__()
 
         self.title("Budget Tracker")
-        self.geometry("650x500")
-        self.configure(bg="#121212")
+        self.geometry("780x550")
+        self.configure(bg="#0F0F0F")
 
         self.db = BudgetDatabase()
 
         self.create_styles()
-        self.create_ui()
+        self.create_layout()
         self.load_table()
         self.update_monthly_total()
 
+    # ---------------------------- Modern Styles ----------------------------
     def create_styles(self):
         style = ttk.Style()
-        style.theme_use("default")
+        style.theme_use("clam")
 
-        style.configure("Treeview",
-                        background="#1e1e1e",
+        # --- Modern TreeView ---
+        style.configure(
+            "Treeview",
+            background="#1A1A1A",
+            foreground="white",
+            rowheight=30,
+            fieldbackground="#1A1A1A",
+            bordercolor="#333",
+            font=("Segoe UI", 10)
+        )
+        style.configure("Treeview.Heading",
+                        background="#252525",
+                        foreground="#00EFFF",
+                        font=("Segoe UI", 11, "bold"))
+
+        style.map("Treeview",
+                  background=[("selected", "#003F7F")],
+                  foreground=[("selected", "white")])
+
+        # --- Modern Buttons ---
+        style.configure("ModernButton.TButton",
+                        background="#0078FF",
                         foreground="white",
-                        rowheight=28,
-                        fieldbackground="#1e1e1e",
-                        bordercolor="#333")
-        style.map('Treeview', background=[('selected', '#333')])
+                        padding=8,
+                        font=("Segoe UI", 10, "bold"),
+                        borderwidth=0)
 
-        style.configure("TButton",
-                        padding=6,
-                        background="#333",
-                        foreground="white")
+        style.map("ModernButton.TButton",
+                  background=[("active", "#005FCC")])
 
+        # Labels / Entry
         style.configure("TLabel",
-                        background="#121212",
-                        foreground="white")
+                        background="#111111",
+                        foreground="white",
+                        font=("Segoe UI", 10))
 
         style.configure("TEntry",
-                        fieldbackground="#1e1e1e",
+                        fieldbackground="#1A1A1A",
                         foreground="white")
 
-    def create_ui(self):
-        # --- Input Fields ---
-        tk.Label(self, text="Amount:", bg="#121212", fg="white").place(x=20, y=20)
-        self.amount_entry = ttk.Entry(self, width=15)
-        self.amount_entry.place(x=100, y=20)
+    # ---------------------------- Layout ----------------------------
+    def create_layout(self):
 
-        tk.Label(self, text="Category:", bg="#121212", fg="white").place(x=20, y=60)
+        # Top Header Bar
+        header = tk.Frame(self, bg="#0078FF", height=70)
+        header.pack(fill="x")
+
+        tk.Label(header, text="💰 Budget Tracker",
+                 bg="#0078FF", fg="white",
+                 font=("Segoe UI", 20, "bold")).pack(pady=10)
+
+        # Main Layout
+        main_frame = tk.Frame(self, bg="#0F0F0F")
+        main_frame.pack(fill="both", expand=True, padx=20, pady=10)
+
+        # Left Card (Inputs)
+        input_card = tk.Frame(main_frame, bg="#151515", bd=1, relief="solid")
+        input_card.place(x=0, y=0, width=300, height=450)
+
+        tk.Label(input_card, text="Amount").place(x=20, y=20)
+        self.amount_entry = ttk.Entry(input_card, width=20)
+        self.amount_entry.place(x=120, y=20)
+
+        tk.Label(input_card, text="Category").place(x=20, y=70)
         self.category_var = tk.StringVar()
-        self.category_dropdown = ttk.Combobox(self, textvariable=self.category_var,
-                                              values=["Food", "Travel", "Shopping", "Bills", "Other"],
-                                              state="readonly")
-        self.category_dropdown.place(x=100, y=60)
+        self.category_dropdown = ttk.Combobox(
+            input_card, textvariable=self.category_var,
+            values=["Food", "Travel", "Shopping", "Bills", "Other"],
+            state="readonly"
+        )
+        self.category_dropdown.place(x=120, y=70)
 
-        tk.Label(self, text="Note:", bg="#121212", fg="white").place(x=20, y=100)
-        self.note_entry = ttk.Entry(self, width=25)
-        self.note_entry.place(x=100, y=100)
+        tk.Label(input_card, text="Note").place(x=20, y=120)
+        self.note_entry = ttk.Entry(input_card, width=20)
+        self.note_entry.place(x=120, y=120)
 
-        ttk.Button(self, text="Add", command=self.add_transaction).place(x=300, y=20)
-        ttk.Button(self, text="Edit", command=self.edit_selected).place(x=300, y=60)
-        ttk.Button(self, text="Delete", command=self.delete_selected).place(x=300, y=100)
+        ttk.Button(input_card, text="Add",
+                   command=self.add_transaction, style="ModernButton.TButton"
+                   ).place(x=20, y=180, width=240)
 
-        ttk.Button(self, text="Show Chart", command=self.show_chart).place(x=400, y=60)
+        ttk.Button(input_card, text="Edit",
+                   command=self.edit_selected, style="ModernButton.TButton"
+                   ).place(x=20, y=225, width=240)
 
-        # --- Monthly Total ---
-        self.monthly_label = tk.Label(self, text="", font=("Arial", 12), bg="#121212", fg="#00ff88")
-        self.monthly_label.place(x=20, y=150)
+        ttk.Button(input_card, text="Delete",
+                   command=self.delete_selected, style="ModernButton.TButton"
+                   ).place(x=20, y=270, width=240)
 
-        # --- Table ---
-        self.table = ttk.Treeview(self, columns=("Amount", "Category", "Note", "Date"), show="headings")
-        self.table.heading("Amount", text="Amount")
-        self.table.heading("Category", text="Category")
-        self.table.heading("Note", text="Note")
-        self.table.heading("Date", text="Date")
-        self.table.place(x=20, y=180, width=600, height=300)
+        ttk.Button(input_card, text="Show Chart",
+                   command=self.show_chart, style="ModernButton.TButton"
+                   ).place(x=20, y=315, width=240)
 
+        # Monthly total label
+        self.monthly_label = tk.Label(input_card,
+                                      text="Monthly Total: ₹0",
+                                      font=("Segoe UI", 12, "bold"),
+                                      fg="#00FFAA", bg="#151515")
+        self.monthly_label.place(x=20, y=380)
+
+        # Right Table
+        self.table = ttk.Treeview(main_frame,
+                                  columns=("Amount", "Category", "Note", "Date"),
+                                  show="headings")
+
+        for col in ("Amount", "Category", "Note", "Date"):
+            self.table.heading(col, text=col)
+            self.table.column(col, anchor="center")
+
+        self.table.place(x=320, y=0, width=430, height=450)
+
+    # ---------------------------- Functions ----------------------------
     def load_table(self):
         for row in self.table.get_children():
             self.table.delete(row)
 
         for t in self.db.data["transactions"]:
-            self.table.insert("", "end", values=(t["amount"], t["category"], t["note"], t["date"]))
+            self.table.insert("", "end",
+                              values=(t["amount"], t["category"], t["note"], t["date"]))
 
     def update_monthly_total(self):
         total = self.db.get_monthly_total()
