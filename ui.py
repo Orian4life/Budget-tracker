@@ -1,152 +1,89 @@
-import tkinter as tk
-from tkinter import ttk, messagebox
+import ttkbootstrap as tb
+from ttkbootstrap.constants import *
 from database import BudgetDatabase
+from tkinter import messagebox
 import matplotlib.pyplot as plt
 
 
-ACCENT = "#1E90FF"   # Neon Blue
-BG_DARK = "#0f0f0f"
-CARD = "#1a1a1a"
-TEXT = "#ffffff"
-SUCCESS = "#00e676"
-
-
-class BudgetApp(tk.Tk):
+class BudgetApp(tb.Window):
     def __init__(self):
-        super().__init__()
+        super().__init__(themename="cosmo")  # modern theme
 
         self.title("Budget Tracker")
-        self.geometry("900x600")
-        self.configure(bg=BG_DARK)
-
+        self.geometry("900x550")
         self.db = BudgetDatabase()
 
-        self.setup_styles()
-        self.build_topbar()
-        self.build_layout()
+        self.create_ui()
         self.load_table()
         self.update_monthly_total()
 
-    # ------------------------------------------------
-    # MODERN STYLING
-    # ------------------------------------------------
-    def setup_styles(self):
-        style = ttk.Style()
-        style.theme_use("clam")
+    def create_ui(self):
+        # MAIN layout: left panel + right table
+        self.grid_columnconfigure(1, weight=1)
+        self.grid_rowconfigure(0, weight=1)
 
-        style.configure("TLabel",
-                        background=BG_DARK,
-                        foreground=TEXT,
-                        font=("Segoe UI", 10))
+        # ---------------- LEFT PANEL ----------------
+        left = tb.Frame(self, padding=15)
+        left.grid(row=0, column=0, sticky="ns")
 
-        style.configure("TEntry",
-                        padding=5,
-                        fieldbackground=CARD,
-                        foreground=TEXT)
+        tb.Label(left, text="Amount:", font=("Segoe UI", 11)).grid(row=0, column=0, sticky="w")
+        self.amount_entry = tb.Entry(left, width=18)
+        self.amount_entry.grid(row=1, column=0, pady=5)
 
-        style.configure("TButton",
-                        font=("Segoe UI", 10, "bold"),
-                        padding=8,
-                        background=ACCENT,
-                        foreground="white",
-                        borderwidth=0)
-
-        style.map("TButton",
-                  background=[("active", "#0b63c3")])
-
-        style.configure("Treeview",
-                        background=CARD,
-                        foreground=TEXT,
-                        rowheight=30,
-                        fieldbackground=CARD,
-                        bordercolor="#333333",
-                        borderwidth=0)
-
-        style.configure("Treeview.Heading",
-                        font=("Segoe UI", 11, "bold"),
-                        background="#222222",
-                        foreground="#1E90FF")
-
-    # ------------------------------------------------
-    # TOP BAR
-    # ------------------------------------------------
-    def build_topbar(self):
-        topbar = tk.Frame(self, bg=ACCENT, height=60)
-        topbar.pack(fill="x", side="top")
-
-        tk.Label(topbar,
-                 text="💰  Budget Tracker",
-                 font=("Segoe UI", 20, "bold"),
-                 bg=ACCENT,
-                 fg="white").pack(pady=10)
-
-    # ------------------------------------------------
-    # PAGE LAYOUT
-    # ------------------------------------------------
-    def build_layout(self):
-        container = tk.Frame(self, bg=BG_DARK)
-        container.pack(fill="both", expand=True, padx=20, pady=20)
-
-        # LEFT FORM CARD
-        form = tk.Frame(container, bg=CARD, bd=1, relief="solid")
-        form.place(x=0, y=0, width=260, height=500)
-
-        # Inputs
-        tk.Label(form, text="Amount:", bg=CARD).place(x=20, y=30)
-        self.amount_entry = ttk.Entry(form, width=20)
-        self.amount_entry.place(x=100, y=30)
-
-        tk.Label(form, text="Category:", bg=CARD).place(x=20, y=80)
-        self.category_var = tk.StringVar()
-        self.category_dropdown = ttk.Combobox(
-            form, textvariable=self.category_var,
+        tb.Label(left, text="Category:", font=("Segoe UI", 11)).grid(row=2, column=0, sticky="w")
+        self.category = tb.Combobox(
+            left,
             values=["Food", "Travel", "Shopping", "Bills", "Other"],
+            width=16,
             state="readonly"
         )
-        self.category_dropdown.place(x=100, y=80)
+        self.category.grid(row=3, column=0, pady=5)
 
-        tk.Label(form, text="Note:", bg=CARD).place(x=20, y=130)
-        self.note_entry = ttk.Entry(form, width=22)
-        self.note_entry.place(x=100, y=130)
+        tb.Label(left, text="Note:", font=("Segoe UI", 11)).grid(row=4, column=0, sticky="w")
+        self.note_entry = tb.Entry(left, width=18)
+        self.note_entry.grid(row=5, column=0, pady=5)
 
         # Buttons
-        ttk.Button(form, text="Add", command=self.add_transaction).place(x=70, y=200, width=120)
-        ttk.Button(form, text="Edit", command=self.edit_selected).place(x=70, y=250, width=120)
-        ttk.Button(form, text="Delete", command=self.delete_selected).place(x=70, y=300, width=120)
-        ttk.Button(form, text="Show Chart", command=self.show_chart).place(x=70, y=350, width=120)
+        tb.Button(left, text="Add", bootstyle=SUCCESS, command=self.add_transaction).grid(row=6, column=0, pady=8, sticky="ew")
+        tb.Button(left, text="Edit", bootstyle=INFO, command=self.edit_selected).grid(row=7, column=0, pady=8, sticky="ew")
+        tb.Button(left, text="Delete", bootstyle=DANGER, command=self.delete_selected).grid(row=8, column=0, pady=8, sticky="ew")
+        tb.Button(left, text="Show Chart", bootstyle=SECONDARY, command=self.show_chart).grid(row=9, column=0, pady=15, sticky="ew")
 
-        # Monthly Total
-        self.monthly_label = tk.Label(form, text="", font=("Segoe UI", 12, "bold"),
-                                      bg=CARD, fg=SUCCESS)
-        self.monthly_label.place(x=20, y=420)
+        self.monthly_label = tb.Label(left, text="", font=("Segoe UI", 12, "bold"), bootstyle=SUCCESS)
+        self.monthly_label.grid(row=10, column=0, pady=10)
 
-        # ------------------------
-        # TABLE AREA
-        # ------------------------
-        table_frame = tk.Frame(container, bg=BG_DARK)
-        table_frame.place(x=280, y=0, width=580, height=500)
+        # ---------------- RIGHT SECTION (TABLE) ----------------
+        table_frame = tb.Frame(self, padding=10)
+        table_frame.grid(row=0, column=1, sticky="nsew")
+        table_frame.grid_columnconfigure(0, weight=1)
+        table_frame.grid_rowconfigure(0, weight=1)
 
-        self.table = ttk.Treeview(
+        self.table = tb.Treeview(
             table_frame,
             columns=("Amount", "Category", "Note", "Date"),
-            show="headings"
+            show="headings",
+            bootstyle=PRIMARY
         )
 
         for col in ("Amount", "Category", "Note", "Date"):
             self.table.heading(col, text=col)
             self.table.column(col, anchor="center")
 
-        self.table.pack(fill="both", expand=True)
+        self.table.grid(row=0, column=0, sticky="nsew")
 
-    # ------------------------------------------------
-    # LOGIC
-    # ------------------------------------------------
+        # Scrollbar
+        scrollbar = tb.Scrollbar(table_frame, orient="vertical", command=self.table.yview)
+        self.table.configure(yscrollcommand=scrollbar.set)
+        scrollbar.grid(row=0, column=1, sticky="ns")
+
+    # ---------------- FUNCTIONS ----------------
+
     def load_table(self):
-        self.table.delete(*self.table.get_children())
+        for item in self.table.get_children():
+            self.table.delete(item)
+
         for t in self.db.data["transactions"]:
-            self.table.insert("", "end", values=(
-                t["amount"], t["category"], t["note"], t["date"]
-            ))
+            self.table.insert("", "end", values=(t["amount"], t["category"], t["note"], t["date"]))
 
     def update_monthly_total(self):
         total = self.db.get_monthly_total()
@@ -156,14 +93,14 @@ class BudgetApp(tk.Tk):
         try:
             amount = float(self.amount_entry.get())
         except:
-            messagebox.showerror("Error", "Amount must be a number.")
+            messagebox.showerror("Invalid Input", "Amount must be a number.")
             return
 
-        category = self.category_var.get()
+        category = self.category.get()
         note = self.note_entry.get()
 
         if not category:
-            messagebox.showerror("Error", "Select a category.")
+            messagebox.showwarning("Missing Data", "Select a category.")
             return
 
         self.db.add_transaction(amount, category, note)
@@ -190,10 +127,10 @@ class BudgetApp(tk.Tk):
         try:
             amount = float(self.amount_entry.get())
         except:
-            messagebox.showerror("Error", "Amount must be a number.")
+            messagebox.showerror("Invalid Input", "Amount must be a number.")
             return
 
-        category = self.category_var.get()
+        category = self.category.get()
         note = self.note_entry.get()
 
         self.db.edit_transaction(index, amount, category, note)
